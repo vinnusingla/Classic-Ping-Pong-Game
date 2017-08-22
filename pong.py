@@ -1,5 +1,5 @@
 
-import pygame, sys , random
+import pygame, sys , random ,time
 #colors
 WHITE = (255,255,255)
 RED = (255,0,0)
@@ -61,6 +61,8 @@ class Bar(object):
 		self.w=w
 		self.v=v
 		self.color=color
+		self.hit=pygame.mixer.Sound("data/boing.wav")
+		self.out=pygame.mixer.Sound("data/out.wav")
 	def collision_boundary(self):
 		if((self.y+self.l==HEIGHT and self.v==1) or (self.y==0 and self.v==-1)):
 			self.v=0
@@ -68,13 +70,17 @@ class Bar(object):
 		if(ball.x+ball.r==self.x or ball.x==self.x+self.w):
 			if(ball.y>=self.y and ball.y<=self.y+self.l):
 				ball.vx=ball.vx*-1
+				self.hit.play()
+				return 0
 			else:
 				global LS,RS
 				if(ball.x+ball.r==self.x):
 					LS=LS+1
 				else:
 					RS=RS+1
+				self.out.play()
 				ball.BallInit()
+				return 1
 	def move(self):
 		#print("Entered bar moved")
 		self.y += self.v
@@ -129,6 +135,7 @@ def start_screen():
 		fps.tick(200)
 
 def play_screen():
+	global LS,RS
 	LS=0
 	RS=0
 	barL=Bar(0,160,80,20,0,RED)
@@ -137,17 +144,17 @@ def play_screen():
 	ball.BallInit()
 	while True:
 		pygame.display.set_caption("Pong Scores - Left Player = " + str(LS)+ " Right Player = " + str(RS) )
+		ball.collision_boundary()
 		#print("drawing")
 		window.fill(BLACK)
 		pygame.draw.rect(window,ball.color,pygame.Rect((ball.x,ball.y),(ball.r,ball.r)))
 		pygame.draw.rect(window,barL.color,pygame.Rect((barL.x,barL.y),(barL.w,barL.l)))
 		pygame.draw.rect(window,barR.color,pygame.Rect((barR.x,barR.y),(barR.w,barR.l)))
-		ball.collision_boundary()
 		#checking collisions
 		barR.collision_boundary()
 		barL.collision_boundary()
-		barL.collision_ball(ball)
-		barR.collision_ball(ball)
+		x=barL.collision_ball(ball)
+		y=barR.collision_ball(ball)
 		#moving objects
 		ball.move()
 		barL.move()
