@@ -14,7 +14,8 @@ RS = 0
 pygame.init()
 fps = pygame.time.Clock()
 window = pygame.display.set_mode((WIDTH, HEIGHT))
-###############################################################################classes################################################################
+###################################################################classes############################################################################
+
 #Buttons Class
 class Button(object):
 	def __init__ (self,txt,location,color=WHITE,fontName="Arial",fontSize=30):
@@ -47,6 +48,8 @@ class Ball(object):
 	def collision_boundary(self):
 		if(self.y+self.r==HEIGHT or self.y-self.r==0):
 			self.vy=self.vy*-1
+		elif(self.x==0):
+			self.vx=self.vx*-1
 			#elif(ball.x+r==self.x)
 	def move(self):
 		#print("Entered ball moved")
@@ -68,7 +71,7 @@ class Bar(object):
 			self.v=0
 	def collision_ball(self,ball):													#pass ball by reference 
 		if(ball.x+ball.r==self.x or ball.x==self.x+self.w):
-			if(ball.y>=self.y and ball.y<=self.y+self.l):
+			if(ball.y+ball.r>=self.y and ball.y<=self.y+self.l):
 				ball.vx=ball.vx*-1
 				self.hit.play()
 				return 0
@@ -81,16 +84,18 @@ class Bar(object):
 				self.out.play()
 				ball.BallInit()
 				return 1
+			return -1
 	def move(self):
 		#print("Entered bar moved")
 		self.y += self.v
 
-#######################################################################################################################################################
+####################################################################################################################################################
 
 
 ####################################################################screens##########################################################################
 
 def start_screen():
+	pygame.display.set_caption("Ping Pong" )
 	b1=Button("1 Player",(250,100))
 	b2=Button("2 Player",(250,170))
 	b3=Button("Controls",(250,240))
@@ -144,6 +149,8 @@ def play_screen():
 	ball.BallInit()
 	while True:
 		pygame.display.set_caption("Pong Scores - Left Player = " + str(LS)+ " Right Player = " + str(RS) )
+		if(LS>=10 or RS>=10):
+			result_screen2()
 		ball.collision_boundary()
 		#print("drawing")
 		window.fill(BLACK)
@@ -153,8 +160,8 @@ def play_screen():
 		#checking collisions
 		barR.collision_boundary()
 		barL.collision_boundary()
-		x=barL.collision_ball(ball)
-		y=barR.collision_ball(ball)
+		barL.collision_ball(ball)
+		barR.collision_ball(ball)
 		#moving objects
 		ball.move()
 		barL.move()
@@ -165,7 +172,7 @@ def play_screen():
 				sys.exit()
 			elif event.type==pygame.KEYDOWN:
 				if event.key == pygame.K_ESCAPE:
-					start_screen()
+					exit_screen()
 				if event.key == pygame.K_UP:
 					barR.v = -1
 				elif event.key == pygame.K_DOWN:
@@ -184,18 +191,20 @@ def play_screen():
 
 def control_screen():
 	window.fill(BLACK)
+	sm=pygame.font.SysFont("Arial",20)
 	font=pygame.font.SysFont("Arial",30)
 	cap=pygame.font.SysFont("Arial",50)
 	med=pygame.font.SysFont("Arial",35)
 	f = []
-	f.append((cap.render("Controls",True,WHITE),(220,20)))
+	f.append((cap.render("Controls",True,WHITE),(210,20)))
 	f.append((med.render("Player 1",True,WHITE),(80,100)))
 	f.append((med.render("Player 2",True,WHITE),(400,100)))
-	f.append((font.render("W - Go Up",True,WHITE),(400,170)))
-	f.append((font.render("S - Go Down",True,WHITE),(400,220)))
-	f.append((font.render("UP - Go Up",True,WHITE),(80,170)))
-	f.append((font.render("Down - Go Down",True,WHITE),(80,220)))
-	f.append((font.render("Press Esc to go back",True,WHITE),(180,350)))
+	f.append((sm.render("W - Go Up",True,WHITE),(400,150)))
+	f.append((sm.render("S - Go Down",True,WHITE),(400,180)))
+	f.append((sm.render("UP - Go Up",True,WHITE),(80,150)))
+	f.append((sm.render("Down - Go Down",True,WHITE),(80,180)))
+	f.append((font.render("First player to score 10 points win",True,WHITE),(110,280)))
+	f.append((sm.render("Press Esc to go back",True,WHITE),(220,370)))
 	
 	for a in f:
 		window.blit(a[0],a[1]) 
@@ -211,9 +220,49 @@ def control_screen():
 
 def single_player():
 	window.fill(BLACK)
+	score=0
+	bar=Bar(580,160,80,20,0,GREEN)
+	ball=Ball(300,200,10,0,0,WHITE)
+	ball.BallInit()
+	while True:
+		pygame.display.set_caption("Pong Score : " + str(score) )
+		ball.collision_boundary()
+		#print("drawing")
+		window.fill(BLACK)
+		pygame.draw.rect(window,ball.color,pygame.Rect((ball.x,ball.y),(ball.r,ball.r)))
+		pygame.draw.rect(window,bar.color,pygame.Rect((bar.x,bar.y),(bar.w,bar.l)))
+		#checking collisions
+		bar.collision_boundary()
+		i=bar.collision_ball(ball)
+		if i==0:
+			score+=1
+		elif i==1:
+			result_screen1("Score : "+str(score))
+		#moving objects
+		ball.move()
+		bar.move()
+		for event in pygame.event.get():
+			if event.type == pygame.QUIT:
+				pygame.quit()
+				sys.exit()
+			elif event.type==pygame.KEYDOWN:
+				if event.key == pygame.K_ESCAPE:
+					exit_screen()
+				elif event.key == pygame.K_UP:
+					bar.v = -1
+				elif event.key == pygame.K_DOWN:
+					bar.v = 1
+			elif event.type == pygame.KEYUP:
+				if event.key in (pygame.K_UP, pygame.K_DOWN):
+					bar.v = 0
+		pygame.display.update()
+		fps.tick(200)
+
+def result_screen1(txt):
+	window.fill(BLACK)
 	font=pygame.font.SysFont("Arial",30)
 	f = []
-	f.append((font.render("InProgress",True,WHITE),(230,150)))
+	f.append((font.render(txt,True,WHITE),(215,170)))
 	f.append((font.render("Press Esc to go back",True,WHITE),(180,350)))
 	for a in f:
 		window.blit(a[0],a[1])
@@ -226,6 +275,72 @@ def single_player():
 				if event.key == pygame.K_ESCAPE:
 					start_screen()
 		pygame.display.update()
-###########################################################################################################################################################
+
+def result_screen2():
+	global LS,RS
+	window.fill(BLACK)
+	font=pygame.font.SysFont("Arial",30)
+	f = []
+	if(LS==RS):
+		f.append((font.render("Draw",True,WHITE),(240,170)))
+	elif(LS>RS):
+		f.append((font.render("Player1 Wins",True,WHITE),(215,170)))
+	else:
+		f.append((font.render("Player2 Wins",True,WHITE),(215,170)))
+	f.append((font.render("Press Esc to go back",True,WHITE),(180,350)))
+	for a in f:
+		window.blit(a[0],a[1])
+	while True:
+		for event in pygame.event.get():
+			if event.type == pygame.QUIT:
+				pygame.quit()
+				sys.exit()
+			elif event.type==pygame.KEYDOWN:
+				if event.key == pygame.K_ESCAPE:
+					start_screen()
+		pygame.display.update()
+
+def exit_screen():
+	pygame.display.set_caption("Ping Pong" )
+
+	b1=Button("YES",(250,120))
+	b2=Button("NO",(252,170))
+	select = 1
+	loop=True
+	font=pygame.font.SysFont("Arial",30)
+	while loop:
+		window.fill(BLACK)
+		window.blit(font.render("Are You Sure You Want To Quit",True,WHITE),(120,50))
+		b1.color=WHITE
+		b2.color=WHITE
+		if(select==1):
+			b1.color=RED
+		else:
+			b2.color=RED
+		b1.draw(window)
+		b2.draw(window)
+		for event in pygame.event.get():
+			if event.type == pygame.QUIT:
+				pygame.quit()
+				sys.exit()
+			elif event.type==pygame.KEYDOWN:
+				#print ("kd left bar = " + str(barL.y) + " right bar = "+str(barR.y))
+				if event.key == pygame.K_ESCAPE:
+					pygame.quit()
+					sys.exit()
+				if event.key == pygame.K_UP:
+					if(select>1):
+						select=select - 1
+				elif event.key == pygame.K_DOWN:
+					if(select<2):
+						select=select + 1
+				elif event.key == pygame.K_RETURN:
+					if(select==1):
+						start_screen()
+					else:
+						loop=False
+		pygame.display.update()
+		fps.tick(200)
+######################################################################################################################################################
 
 start_screen()
